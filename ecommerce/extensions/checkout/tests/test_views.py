@@ -3,7 +3,6 @@ from decimal import Decimal
 import ddt
 import httpretty
 from django.core.urlresolvers import reverse
-from django.conf import settings
 from oscar.core.loading import get_model
 from oscar.test import newfactories as factories
 
@@ -11,6 +10,7 @@ from ecommerce.core.tests.decorators import mock_course_catalog_api_client
 from ecommerce.coupons.tests.mixins import CourseCatalogMockMixin
 from ecommerce.courses.models import Course
 from ecommerce.extensions.checkout.exceptions import BasketNotFreeError
+from ecommerce.extensions.checkout.utils import add_currency, get_receipt_page_url
 from ecommerce.extensions.refund.tests.mixins import RefundTestMixin
 from ecommerce.tests.testcases import TestCase
 
@@ -53,12 +53,15 @@ class FreeCheckoutViewTests(TestCase):
         """ Verify redirect to the receipt page. """
         self.prepare_basket(0)
         self.assertEqual(Order.objects.count(), 0)
-        receipt_page = self.site_configuration.build_ecommerce_url(settings.RECEIPT_PAGE_PATH)
 
         response = self.client.get(self.path)
         self.assertEqual(Order.objects.count(), 1)
 
-        expected_url = '{}?order_number={}'.format(receipt_page, Order.objects.first().number)
+        order = Order.objects.first()
+        expected_url = get_receipt_page_url(
+            order_number=order.number,
+            site_configuration=order.site.siteconfiguration
+        )
         self.assertRedirects(response, expected_url, fetch_redirect_response=False)
 
     @httpretty.activate
@@ -197,7 +200,7 @@ class ReceiptViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
             'is_refunded': False,
             'items': [{
                 'description': line.description,
-                'cost': '${price}'.format(price=line.line_price_excl_tax),
+                'cost': add_currency(line.line_price_excl_tax),
                 'quantity': line.quantity
             } for line in order.lines.all()],
             'order_number': str(order.number),

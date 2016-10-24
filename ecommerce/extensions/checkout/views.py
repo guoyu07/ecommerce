@@ -263,7 +263,7 @@ class ReceiptResponseView(TemplateView):
                 "If your course does not appear on your dashboard, contact {payment_support_link}."
             ).format(payment_support_link=payment_support_link),
             'is_payment_complete': True,
-            'lms_url': site_configuration.build_lms_url(),
+            'lms_url': site_configuration.lms_url_root,
             'name': '{} {}'.format(self.request.user.first_name, self.request.user.last_name),
             'nav_hidden': True,
             'page_title': _('Receipt'),
