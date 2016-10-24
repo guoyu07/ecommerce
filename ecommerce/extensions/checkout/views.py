@@ -251,25 +251,26 @@ class ReceiptResponseView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ReceiptResponseView, self).get_context_data(**kwargs)
 
-        payment_support_email = self.request.site.siteconfiguration.payment_support_email
+        site_configuration = self.request.site.siteconfiguration
+        payment_support_email = site_configuration.payment_support_email
         payment_support_link = '<a href="mailto:{email}">{email}</a>'.format(email=payment_support_email)
 
         context.update({
-            'dashboard': get_lms_url('/dashboard'),
+            'dashboard': site_configuration.build_lms_url('/dashboard'),
             'error_summary': _('An error occurred while creating your receipt.'),
             'error_text': None,
             'for_help_text': _(
                 "If your course does not appear on your dashboard, contact {payment_support_link}."
             ).format(payment_support_link=payment_support_link),
             'is_payment_complete': True,
-            'lms_url': get_lms_url(),
+            'lms_url': site_configuration.build_lms_url(),
             'name': '{} {}'.format(self.request.user.first_name, self.request.user.last_name),
             'nav_hidden': True,
             'page_title': _('Receipt'),
             'payment_support_email': payment_support_email,
             'payment_support_link': payment_support_link,
             'platform_name': settings.SITE_NAME,
-            'verify_link': get_lms_url('/verify_student/verify-now/')
+            'verify_link': site_configuration.build_lms_url('/verify_student/verify-now/')
         })
 
         return context
