@@ -16,6 +16,7 @@ require.config({
         'ecommerce': 'js/shims/ecommerce',
         'edx-ui-toolkit': '../../node_modules/edx-ui-toolkit/src/js',
         'jquery': 'bower_components/jquery/dist/jquery',
+        'jquery-url': 'bower_components/js-url/url.min',
         'js-cookie': 'bower_components/js-cookie/src/js.cookie',
         'models': 'js/models',
         'moment': 'bower_components/moment/moment',
