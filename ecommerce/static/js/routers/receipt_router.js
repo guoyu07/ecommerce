@@ -16,8 +16,7 @@ define([
             },
 
             showReceiptPage: function(orderNumber) {
-                var page = new ReceiptPage({orderNumber: orderNumber});
-                this.currentView = page;
+                this.currentView = new ReceiptPage({orderNumber: orderNumber});
             }
         });
     }

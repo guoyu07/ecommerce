@@ -54,18 +54,19 @@ def get_receipt_page_url(site_configuration, order_number=None):
     )
 
 
-def add_currency(amount):
+def format_price(amount, currency):
     """ Adds currency to the price amount.
 
     Args:
         amount (Decimal): Price amount
+        currency (str): Price currency
 
     Returns:
         str: Formatted price with currency.
     """
     return format_currency(
         amount,
-        settings.OSCAR_DEFAULT_CURRENCY,
+        currency,
         format=u'#,##0.00',
         locale=to_locale(get_language())
     )

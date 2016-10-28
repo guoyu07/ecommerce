@@ -1,10 +1,11 @@
 """Offer Utility Methods. """
 from decimal import Decimal
 
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from oscar.core.loading import get_model
 
-from ecommerce.extensions.checkout.utils import add_currency
+from ecommerce.extensions.checkout.utils import format_price
 
 Benefit = get_model('offer', 'Benefit')
 
@@ -60,6 +61,6 @@ def format_benefit_value(benefit):
     if benefit.type == Benefit.PERCENTAGE:
         benefit_value = _('{benefit_value}%'.format(benefit_value=benefit_value))
     else:
-        converted_benefit = add_currency(Decimal(benefit.value))
+        converted_benefit = format_price(Decimal(benefit.value), settings.OSCAR_DEFAULT_CURRENCY)
         benefit_value = _('${benefit_value}'.format(benefit_value=converted_benefit))
     return benefit_value

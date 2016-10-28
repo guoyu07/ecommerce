@@ -6,11 +6,9 @@ from django.core.urlresolvers import reverse
 from oscar.core.loading import get_model
 from oscar.test import newfactories as factories
 
-from ecommerce.core.tests.decorators import mock_course_catalog_api_client
 from ecommerce.coupons.tests.mixins import CourseCatalogMockMixin
-from ecommerce.courses.models import Course
 from ecommerce.extensions.checkout.exceptions import BasketNotFreeError
-from ecommerce.extensions.checkout.utils import add_currency, get_receipt_page_url
+from ecommerce.extensions.checkout.utils import get_receipt_page_url, format_price
 from ecommerce.extensions.refund.tests.mixins import RefundTestMixin
 from ecommerce.tests.testcases import TestCase
 
@@ -160,97 +158,136 @@ class ReceiptViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
         self.user = self.create_user()
         self.client.login(username=self.user.username, password=self.password)
 
-    def test_login_required(self):
+    def _get_cybersource_response(self, decision):
+        """
+        Helper function used in tests to make a post request with CyberSource response.
+
+        Arguments:
+            decision (str): Decision returned by CyberSource.
+
+        Returns:
+            TemplateResponse: Response of the POST Request to the ReceiptView.
+        """
+        return self.client.post(
+            self.path,
+            params={'basket_id': 1},
+            data={'decision': decision, 'reason_code': '200', 'signed_field_names': 'dummy'}
+        )
+
+    def _visit_receipt_page_with_another_user(self, order, user):
+        """
+        Helper function for logging in with another user and going to the Receipt Page.
+
+        Arguments:
+            order (Order): Order for which the Receipt Page should be opened.
+            user (User): User that's logging in.
+
+        Returns:
+            response (Response): Response object that's returned by a ReceiptResponseView
+        """
+        self.client.logout()
+        self.client.login(username=user.username, password=self.password)
+        return self.client.get('{path}?order_number={order_number}'.format(
+            order_number=order.number,
+            path=self.path
+        ))
+
+    def test_login_required_post_request(self):
         """ The view should redirect to the login page if the user is not logged in. """
         self.client.logout()
         response = self.client.post(self.path)
         self.assertEqual(response.status_code, 302)
 
+    def test_login_required_get_request(self):
+        """ The view should redirect to the login page if the user is not logged in. """
+        self.client.logout()
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 302)
+
     def test_get_receipt_for_nonexisting_order(self):
+        """ The view should return 404 status if the Order is not found. """
         order_number = 'ABC123'
         response = self.client.get('{path}?order_number={order_number}'.format(
             order_number=order_number,
             path=self.path
         ))
-        self.assertEqual(response.status_code, 200)
-        context_data = {
-            'error_text': 'Order {order_number} not found.'.format(order_number=order_number),
-            'for_help_text': '',
-            'is_payment_complete': False,
-            'page_title': 'Order not found'
-        }
-        self.assertDictContainsSubset(context_data, response.context_data)
+        self.assertEqual(response.status_code, 404)
 
-    @httpretty.activate
-    @mock_course_catalog_api_client
     def test_get_receipt_for_existing_order(self):
+        """
+        Staff user and Order owner should be able to see the Receipt Page.
+        All other users should get the 404 status.
+        """
+        staff_user = self.create_user(is_staff=True)
+        other_user = self.create_user()
+
         order = self.create_order()
-        seat = order.basket.lines.first().product
-        course = Course.objects.get(id=seat.attr.course_key)
-        self.mock_dynamic_catalog_course_runs_api(course_run=course)
+        site_configuration = order.site.siteconfiguration
         response = self.client.get('{path}?order_number={order_number}'.format(
             order_number=order.number,
             path=self.path
         ))
-
         seat = order.lines.first().product
-        receipt_data = {
-            'billed_to': None,
-            'email': order.user.email,
-            'is_refunded': False,
-            'items': [{
-                'description': line.description,
-                'cost': add_currency(line.line_price_excl_tax),
-                'quantity': line.quantity
-            } for line in order.lines.all()],
-            'order_number': str(order.number),
-            'payment_processor': None
-        }
         context_data = {
-            'course': {
-                'key': course.id,
-                'title': course.name,
-                'start': '2016-05-01T00:00:00Z',
-                'image': {
-                    'src': 'path/to/the/course/image'
-                }
+            'is_payment_complete': True,
+            'name': '{} {}'.format(order.user.first_name, order.user.last_name),
+            'page_title': 'Receipt',
+            'providers': [],
+            'receipt': {
+                'billed_to': None,
+                'currency': order.currency,
+                'discount': '0.00',
+                'discount_percentage': 0.0,
+                'email': order.user.email,
+                'is_refunded': False,
+                'items': [{
+                    'description': line.description,
+                    'cost': str(format_price(float(line.line_price_excl_tax), order.currency)),
+                    'quantity': line.quantity
+                } for line in order.lines.all()],
+                'original_cost': format_price(seat.stockrecords.first().price_excl_tax, order.currency),
+                'order_number': str(order.number),
+                'payment_processor': None,
+                'purchased_datetime': order.date_placed.strftime('%d. %B %Y'),
+                'total_cost': str(format_price(float(order.total_excl_tax), order.currency)),
+                'vouchers': []
             },
-            'is_verification_required': seat.attr.id_verification_required,
-            'lms_url': order.site.siteconfiguration.lms_url_root,
-            'provider_data': None,
-            'verified': seat.attr.certificate_type == 'verified'
+            'verification_data': {
+                seat.attr.course_key: True
+            }
         }
-
         self.assertEqual(response.status_code, 200)
-        self.assertDictContainsSubset(receipt_data, response.context_data['receipt'])
         self.assertDictContainsSubset(context_data, response.context_data)
 
-    @httpretty.activate
-    def post_to_receipt_page(self, post_data):
-        httpretty.register_uri(httpretty.POST, self.path, body=post_data)
-
-        response = self.client.post(self.path, params={'basket_id': 1}, data=post_data)
+        response = self._visit_receipt_page_with_another_user(order, staff_user)
         self.assertEqual(response.status_code, 200)
-        return response
+        self.assertDictContainsSubset(context_data, response.context_data)
 
-    @ddt.data('ACCEPT', 'REJECT', 'ERROR')
-    def test_cybersource_decision(self, decision):
-        """
-        Ensure that when Cybersource sends a response back to the view, it renders the page title appropriately
-        depending on the decision code provided in response data.
-        """
-        post_data = {'decision': decision, 'reason_code': '200', 'signed_field_names': 'dummy'}
-        expected_pattern = r"<title>(\s+)Receipt" if decision == 'ACCEPT' else r"<title>(\s+)Payment Failed"
-        response = self.post_to_receipt_page(post_data)
+        response = self._visit_receipt_page_with_another_user(order, other_user)
+        context_data = {
+            'error_text': 'Order {order_number} not found.'.format(order_number=order.number),
+            'is_payment_complete': False,
+            'page_title': 'Order not found'
+        }
+        self.assertEqual(response.status_code, 404)
+        self.assertDictContainsSubset(context_data, response.context_data)
+
+    def test_cybersource_accept_decision(self):
+        """ Ensure that when Cybersource sends ACCEPT response back to the view, page title is 'Receipt'. """
+        response = self._get_cybersource_response('ACCEPT')
+        expected_pattern = r"<title>(\s+)Receipt"
+
+        self.assertEqual(response.status_code, 200)
         self.assertRegexpMatches(response.content, expected_pattern)
 
-    def test_hide_nav_header(self):
+    @ddt.data('REJECT', 'ERROR')
+    def test_cybersource_reject_error_decision(self, decision):
         """
-        Verify that the header navigation links are hidden for the edx.org version
+        Ensure that when Cybersource sends REJECT/ERROR response back to the view,
+        page title is 'Payment Failed'.
         """
-        post_data = {'decision': 'ACCEPT', 'reason_code': '200', 'signed_field_names': 'dummy'}
-        response = self.post_to_receipt_page(post_data)
+        response = self._get_cybersource_response(decision)
+        expected_pattern = r"<title>(\s+)Payment Failed"
 
-        self.assertNotContains(response, "How it Works")
-        self.assertNotContains(response, "Find courses")
-        self.assertNotContains(response, "Schools & Partners")
+        self.assertEqual(response.status_code, 200)
+        self.assertRegexpMatches(response.content, expected_pattern)

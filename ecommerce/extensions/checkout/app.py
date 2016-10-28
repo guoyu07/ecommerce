@@ -38,12 +38,10 @@ class CheckoutApplication(app.CheckoutApplication):
             url(r'payment-details/$',
                 self.payment_details_view.as_view(), name='payment-details'),
 
-            # Preview and thankyou
+            # Preview
             url(r'preview/$',
                 self.payment_details_view.as_view(preview=True),
                 name='preview'),
-            url(r'thank-you/$', self.thankyou_view.as_view(),
-                name='thank-you'),
         ]
         return self.post_process_urls(urls)
 

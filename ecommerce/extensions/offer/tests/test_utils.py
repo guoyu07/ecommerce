@@ -1,12 +1,13 @@
 from decimal import Decimal
 import ddt
 
+from django.conf import settings
 from oscar.core.loading import get_model
 from oscar.test.factories import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
 from ecommerce.courses.tests.factories import CourseFactory
 from ecommerce.extensions.catalogue.tests.mixins import CourseCatalogTestMixin
-from ecommerce.extensions.checkout.utils import add_currency
+from ecommerce.extensions.checkout.utils import format_price
 from ecommerce.extensions.offer.utils import _remove_exponent_and_trailing_zeros, format_benefit_value
 from ecommerce.tests.testcases import TestCase
 
@@ -33,7 +34,7 @@ class UtilTests(CourseCatalogTestMixin, TestCase):
         self.assertEqual(benefit_value, '35%')
 
         benefit_value = format_benefit_value(self.value_benefit)
-        expected_benefit = add_currency(Decimal((self.seat_price - 10)))
+        expected_benefit = format_price(Decimal((self.seat_price - 10)), settings.OSCAR_DEFAULT_CURRENCY)
         self.assertEqual(benefit_value, '${expected_benefit}'.format(expected_benefit=expected_benefit))
 
     @ddt.data(
