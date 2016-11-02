@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 
 import ddt
@@ -146,7 +147,7 @@ class CheckoutErrorViewTests(TestCase):
 
 
 @ddt.ddt
-class ReceiptViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
+class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
     """
     Tests for the receipt view.
     """
@@ -154,7 +155,7 @@ class ReceiptViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
     path = reverse('checkout:receipt')
 
     def setUp(self):
-        super(ReceiptViewTests, self).setUp()
+        super(ReceiptResponseViewTests, self).setUp()
         self.user = self.create_user()
         self.client.login(username=self.user.username, password=self.password)
 
@@ -290,3 +291,29 @@ class ReceiptViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertRegexpMatches(response.content, expected_pattern)
+
+    @httpretty.activate
+    def test_order_data_for_credit_seat(self):
+        """ Ensure that the context is updated with Order data. """
+        order = self.create_order(credit=True)
+        seat = order.lines.first().product
+        body = {'display_name': 'Hogwarts'}
+
+        httpretty.register_uri(
+            httpretty.GET,
+            self.site.siteconfiguration.build_lms_url(
+                'api/credit/v1/providers/{credit_provider}/'.format(credit_provider=seat.attr.credit_provider)
+            ),
+            body=json.dumps(body),
+            content_type="application/json"
+        )
+
+        response = self.client.get('{path}?order_number={order_number}'.format(
+            order_number=order.number,
+            path=self.path
+        ))
+
+        body['course_key'] = seat.attr.course_key
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['providers'][0], body)
+        self.assertEqual(len(response.context_data['providers']), 1)

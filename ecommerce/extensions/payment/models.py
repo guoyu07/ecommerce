@@ -17,36 +17,6 @@ class PaymentProcessorResponse(models.Model):
     response = JSONField()
     created = models.DateTimeField(auto_now_add=True, db_index=True)
 
-    @property
-    def get_recipient_data(self):
-        """
-        Get the recipient data provided by the Payment Processor.
-
-        returns:
-            dict: Recipient data.
-        """
-        if self.processor_name == 'paypal':
-            payer_info = self.response.get('payer')['payer_info']
-            shipping_address = payer_info.get('shipping_address')
-            return {
-                'first_name': payer_info.get('first_name'),
-                'last_name': payer_info.get('last_name'),
-                'city': shipping_address.get('city'),
-                'state': shipping_address.get('state'),
-                'postal_code': shipping_address.get('postal_code'),
-                'country': shipping_address.get('country_code')
-            }
-        elif self.processor_name == 'cybersource':
-            return {
-                'first_name': self.response.get('req_bill_to_forename'),
-                'last_name': self.response.get('req_bill_to_surname'),
-                'city': self.response.get('req_bill_to_address_city'),
-                'state': self.response.get('req_bill_to_address_state'),
-                'postal_code': self.response.get('req_bill_to_address_postal_code'),
-                'country': self.response.get('req_bill_to_address_country')
-            }
-        return {}
-
     class Meta(object):
         get_latest_by = 'created'
         index_together = ('processor_name', 'transaction_id')
