@@ -222,7 +222,6 @@ class ReceiptViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
         other_user = self.create_user()
 
         order = self.create_order()
-        site_configuration = order.site.siteconfiguration
         response = self.client.get('{path}?order_number={order_number}'.format(
             order_number=order.number,
             path=self.path
