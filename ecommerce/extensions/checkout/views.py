@@ -133,7 +133,6 @@ class ReceiptResponseView(ThankYouView):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        order_number = self.request.GET['order_number']
         order = self.get_object()
 
         if order and self.validate_access(order, request.user):
@@ -141,8 +140,10 @@ class ReceiptResponseView(ThankYouView):
             return self.render_to_response(context)
 
         context.update({
-            'error_text': _('Order {order_number} not found.').format(order_number=order_number),
-            'is_payment_complete': False,
+            'error_text': _('The receipt that you specified does not exist in this location. '
+                            'Make sure that the URL is correct and try again.'),
+            'order_not_found': True,
+            'order_history_url': request.site.siteconfiguration.build_lms_url('account/settings'),
             'page_title': _('Order not found')
         })
         return self.render_to_response(context=context, status=404)

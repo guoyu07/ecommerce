@@ -20,15 +20,25 @@
             {{ error_summary }}
           </h3>
           <div class="copy">
-            <p>{% blocktrans %} {{ error_text }} {% endblocktrans %}</p>
+            <p>
+              {% blocktrans %}
+                {{ error_text }}
+              {% endblocktrans %}
+            </p>
             <br/>
           </div>
           <div class="msg">
             <p>
               {% autoescape off %}
-                {% blocktrans with support_email=support_email link_start='<a href="mailto:' link_start_ending='">' link_end='</a>' %}
-                  If your course does not appear on your dashboard, contact {{ link_start }}{{ support_email }}{{ link_start_ending }}{{ support_email }}{{ link_end }}.
-                {% endblocktrans %}
+                {% if order_not_found %}
+                  {% blocktrans with order_history_url=order_history_url link_start='<a href="' link_start_ending='">' link_end='</a>' %}
+                    You can also access receipts from your {{ link_start }}{{ order_history_url }}{{ link_start_ending }} Orders page{{ link_end }}.
+                  {% endblocktrans %}
+                {% else %}
+                  {% blocktrans with support_email=support_email link_start='<a href="mailto:' link_start_ending='">' link_end='</a>' %}
+                    If your course does not appear on your dashboard, contact {{ link_start }}{{ support_email }}{{ link_start_ending }}{{ support_email }}{{ link_end }}.
+                  {% endblocktrans %}
+                {% endif %}
               {% endautoescape %}
             </p>
           </div>
