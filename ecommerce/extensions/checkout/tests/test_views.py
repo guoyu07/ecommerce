@@ -265,7 +265,8 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
 
         response = self._visit_receipt_page_with_another_user(order, other_user)
         context_data = {
-            'error_text': 'Order {order_number} not found.'.format(order_number=order.number),
+            'error_text': 'The receipt that you specified does not exist in this location. '
+                          'Make sure that the URL is correct and try again.',
             'is_payment_complete': False,
             'page_title': 'Order not found'
         }

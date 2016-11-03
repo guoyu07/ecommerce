@@ -142,6 +142,7 @@ class ReceiptResponseView(ThankYouView):
         context.update({
             'error_text': _('The receipt that you specified does not exist in this location. '
                             'Make sure that the URL is correct and try again.'),
+            'is_payment_complete': False,
             'order_not_found': True,
             'order_history_url': request.site.siteconfiguration.build_lms_url('account/settings'),
             'page_title': _('Order not found')
