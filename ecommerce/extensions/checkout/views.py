@@ -149,19 +149,6 @@ class ReceiptResponseView(ThankYouView):
         })
         return self.render_to_response(context=context, status=404)
 
-    def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
-        context = self.get_context_data(**kwargs)
-        # CyberSource responses will indicate whether a payment failed due to a transaction on their end. In this case,
-        # we can provide the learner more detailed information in the error message.
-        if request.POST['decision'] != 'ACCEPT':
-            context.update({
-                'is_payment_complete': False,
-                'page_title': _('Payment Failed'),
-                'error_summary': _('A system error occurred while processing your payment. You have not been charged.'),
-                'error_text': _('Please wait a few minutes and then try again.')
-            })
-        return self.render_to_response(context)
-
     def get_context_data(self, **kwargs):
         return {
             'is_payment_complete': True,
@@ -217,7 +204,7 @@ class ReceiptResponseView(ThankYouView):
         order_data = OrderSerializer(order, context={'request': self.request}).data
         discount_value = float(order_data['discount'])
         total_amount = float(order_data['total_excl_tax'])
-        original_cost = discount_value + total_cost
+        original_cost = discount_value + total_amount
 
         receipt = {
             'billed_to': order.billing_address,

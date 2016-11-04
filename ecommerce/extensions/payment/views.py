@@ -10,14 +10,12 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.management import call_command
 from django.db import transaction
-from django.http import Http404, HttpResponse, HttpResponseBadRequest
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import FormView
-from django.views.generic import View
+from django.views.generic import FormView, TemplateView, View
 from oscar.apps.partner import strategy
 from oscar.apps.payment.exceptions import PaymentError, UserCancelled, TransactionDeclined
 from oscar.core.loading import get_class, get_model
@@ -270,6 +268,23 @@ class CybersourceNotifyView(EdxOrderPlacementMixin, View):
         except:  # pylint: disable=bare-except
             logger.exception(self.order_placement_failure_msg, basket.id)
             return HttpResponse(status=500)
+
+
+class CybersourceInterstitialView(CybersourceNotifyView, TemplateView):
+    """ Interstitial view for Cybersource Payments. """
+
+    def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
+        # CyberSource responses will indicate whether a payment failed due to a transaction on their end. In this case,
+        # we can provide the learner more detailed information in the error message.
+        response = super(CybersourceInterstitialView, self).post(request)
+        cybersource_response = request.POST.dict()
+        if response.status_code == 200 and cybersource_response.get('decision') == 'ACCEPT':
+            receipt_url = get_receipt_page_url(
+                order_number=cybersource_response.get('req_reference_number'),
+                site_configuration=self.request.site.siteconfiguration
+            )
+            return redirect(receipt_url)
+        return response
 
 
 class PaypalPaymentExecutionView(EdxOrderPlacementMixin, View):

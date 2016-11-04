@@ -249,6 +249,7 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
                 'order_number': str(order.number),
                 'payment_processor': None,
                 'purchased_datetime': order.date_placed.strftime('%d. %B %Y'),
+                'total_amount': float(order.total_excl_tax),
                 'total_cost': str(format_price(float(order.total_excl_tax), order.currency)),
                 'vouchers': []
             },
@@ -272,26 +273,6 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
         }
         self.assertEqual(response.status_code, 404)
         self.assertDictContainsSubset(context_data, response.context_data)
-
-    def test_cybersource_accept_decision(self):
-        """ Ensure that when Cybersource sends ACCEPT response back to the view, page title is 'Receipt'. """
-        response = self._get_cybersource_response('ACCEPT')
-        expected_pattern = r"<title>(\s+)Receipt"
-
-        self.assertEqual(response.status_code, 200)
-        self.assertRegexpMatches(response.content, expected_pattern)
-
-    @ddt.data('REJECT', 'ERROR')
-    def test_cybersource_reject_error_decision(self, decision):
-        """
-        Ensure that when Cybersource sends REJECT/ERROR response back to the view,
-        page title is 'Payment Failed'.
-        """
-        response = self._get_cybersource_response(decision)
-        expected_pattern = r"<title>(\s+)Payment Failed"
-
-        self.assertEqual(response.status_code, 200)
-        self.assertRegexpMatches(response.content, expected_pattern)
 
     @httpretty.activate
     def test_order_data_for_credit_seat(self):

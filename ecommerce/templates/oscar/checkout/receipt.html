@@ -35,13 +35,17 @@
             <p>
               {% autoescape off %}
                 {% if order_not_found %}
-                  {% blocktrans with order_history_url=order_history_url link_start='<a href="' link_start_ending='">' link_end='</a>' %}
-                    You can also access receipts from your {{ link_start }}{{ order_history_url }}{{ link_start_ending }} Orders page{{ link_end }}.
-                  {% endblocktrans %}
+                  {% with "<a href='"|add:order_history_url|add:"'>"|safe as start_link %}
+                    {% blocktrans with order_history_url=order_history_url end_link="</a>"|safe %}
+                      You can also access receipts from your {{ start_link }}Orders page{{ end_link }}.
+                    {% endblocktrans %}
+                  {% endwith %}
                 {% else %}
-                  {% blocktrans with support_email=support_email link_start='<a href="mailto:' link_start_ending='">' link_end='</a>' %}
-                    If your course does not appear on your dashboard, contact {{ link_start }}{{ support_email }}{{ link_start_ending }}{{ support_email }}{{ link_end }}.
-                  {% endblocktrans %}
+                  {% with "<a class='nav-link' href='mailto:"|add:support_email|add:"'>"|safe as start_link %}
+                    {% blocktrans with support_email=support_email end_link="</a>"|safe %}
+                      You can also access receipts from your {{ start_link }}{{ support_email }}{{ end_link }}.
+                    {% endblocktrans %}
+                  {% endwith %}
                 {% endif %}
               {% endautoescape %}
             </p>
