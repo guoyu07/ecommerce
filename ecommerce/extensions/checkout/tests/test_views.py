@@ -236,7 +236,7 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
             'receipt': {
                 'billed_to': None,
                 'currency': order.currency,
-                'discount': '0.00',
+                'discount': '$0.00',
                 'discount_percentage': 0.0,
                 'email': order.user.email,
                 'is_refunded': False,

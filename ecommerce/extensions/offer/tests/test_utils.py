@@ -35,7 +35,7 @@ class UtilTests(CourseCatalogTestMixin, TestCase):
 
         benefit_value = format_benefit_value(self.value_benefit)
         expected_benefit = format_price(Decimal((self.seat_price - 10)), settings.OSCAR_DEFAULT_CURRENCY)
-        self.assertEqual(benefit_value, '${expected_benefit}'.format(expected_benefit=expected_benefit))
+        self.assertEqual(benefit_value, expected_benefit)
 
     @ddt.data(
         ('1.0', '1'),

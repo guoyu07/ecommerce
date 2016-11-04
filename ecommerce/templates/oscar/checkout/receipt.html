@@ -162,13 +162,13 @@
                       <div class="report-receipt-provider row" id="receipt-provider">
                         <div class="provider-wrapper col-md-9">
                           <div class="provider-info">
-                            {% blocktrans %}
-                              You still need to visit the {{ provider.display_name }} website to complete the credit process.
+                            {% blocktrans with provider_name=provider.display_name %}
+                              You still need to visit the {{ provider_name }} website to complete the credit process.
                             {% endblocktrans %}
                           </div>
                           <div class="provider-more-info">
-                            {% blocktrans %}
-                              To receive your course credit, {{ provider.display_name }} requires online learners to submit a credit request.
+                            {% blocktrans with provider_name=provider.display_name platform_name=platform_name %}
+                              To finalize course credit, {{ provider_name }} requires {{ platform_name }} learners to submit a credit request.
                             {% endblocktrans %}
                           </div>
                           <div class="provider-instructions">

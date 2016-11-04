@@ -58,32 +58,6 @@ def track_completed_order(sender, order=None, **kwargs):  # pylint: disable=unus
     )
 
 
-@receiver(post_payment, dispatch_uid='tracking.post_payment_callback')
-@silence_exceptions("Failed to emit tracking event upon payment completion.")
-def track_completed_payment(sender, order=None, **kwargs):  # pylint: disable=unused-argument
-    """Emit a tracking event when a payment is completed."""
-    if not (is_segment_configured() and order.total_excl_tax > 0):
-        return
-
-    user_tracking_id, lms_client_id, lms_ip = parse_tracking_context(order.user)
-
-    order.site.siteconfiguration.segment_client.track(
-        user_tracking_id,
-        'Completed Purchase',
-        {
-            'orderId': order.number,
-            'total': str(order.total_excl_tax),
-            'currency': order.currency,
-        },
-        context={
-            'ip': lms_ip,
-            'Google Analytics': {
-                'clientId': lms_client_id
-            }
-        },
-    )
-
-
 @receiver(post_checkout, dispatch_uid='send_completed_order_email')
 @silence_exceptions("Failed to send order completion email.")
 def send_course_purchase_email(sender, order=None, **kwargs):  # pylint: disable=unused-argument

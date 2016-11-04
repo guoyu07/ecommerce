@@ -67,6 +67,5 @@ def format_price(amount, currency):
     return format_currency(
         amount,
         currency,
-        format=u'#,##0.00',
         locale=to_locale(get_language())
     )

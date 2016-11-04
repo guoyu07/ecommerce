@@ -1,7 +1,6 @@
 """Offer Utility Methods. """
 from decimal import Decimal
 
-from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from oscar.core.loading import get_model
 
@@ -61,6 +60,6 @@ def format_benefit_value(benefit):
     if benefit.type == Benefit.PERCENTAGE:
         benefit_value = _('{benefit_value}%'.format(benefit_value=benefit_value))
     else:
-        converted_benefit = format_price(Decimal(benefit.value), settings.OSCAR_DEFAULT_CURRENCY)
-        benefit_value = _('${benefit_value}'.format(benefit_value=converted_benefit))
+        # TODO: Fix this; Currency should be a dynamic value;
+        benefit_value = format_price(Decimal(benefit.value), 'USD')
     return benefit_value
