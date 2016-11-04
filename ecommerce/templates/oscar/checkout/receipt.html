@@ -6,6 +6,10 @@
     {{ page_title }}
 {% endblock title %}
 
+{% block javascript %}
+  <script src="{% static 'js/apps/receipt_app.js' %}"></script>
+{% endblock javascript %}
+
 {% block navbar %}
     {% include 'edx/partials/_student_navbar.html' %}
 {% endblock navbar %}
@@ -48,11 +52,8 @@
       <div class="container content-container">
         <div id="receipt-container"
           class="pay-and-verify"
-          data-is-payment-complete="{{ is_payment_complete }}"
-          data-platform-name="{{ platform_name }}"
-          data-verified="{{ is_verification_required }}"
-          data-username="{{ name }}"
-          data-lms-url="{{ lms_base_url }}">
+          data-total-amount="{{ total_amount }}"
+          data-currency="{{ currency }}">
           <div class="wrapper-content-main">
             <article class="content-main">
               <h3 class="thank-you">

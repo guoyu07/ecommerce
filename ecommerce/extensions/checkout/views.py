@@ -216,7 +216,7 @@ class ReceiptResponseView(ThankYouView):
 
         order_data = OrderSerializer(order, context={'request': self.request}).data
         discount_value = float(order_data['discount'])
-        total_cost = float(order_data['total_excl_tax'])
+        total_amount = float(order_data['total_excl_tax'])
         original_cost = discount_value + total_cost
 
         receipt = {
@@ -234,7 +234,8 @@ class ReceiptResponseView(ThankYouView):
             'original_cost': format_price(original_cost, order.currency),
             'payment_processor': order_data['payment_processor'],
             'purchased_datetime': _date(dateutil.parser.parse(order_data['date_placed']), "d. E Y"),
-            'total_cost': format_price(total_cost, order.currency),
+            'total_amount': total_amount,
+            'total_cost': format_price(total_amount, order.currency),
             'vouchers': order_data['vouchers']
         }
 
