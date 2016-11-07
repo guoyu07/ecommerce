@@ -1,0 +1,31 @@
+{% load i18n %}
+
+<div class="col-md-9">
+  <p class="verify-message-header">{% trans "Don’t forget to verify your identity!" %}</p>
+  <p class="verify-message">
+    {% blocktrans %}
+      To receive a verified certificate, you have to verify your identity using your <span class="bolded-text">webcam</span> and an <span class="bolded-text">official government-issued photo identification</span> before the verification deadline for this course.
+    {% endblocktrans %}
+  </p>
+</div>
+
+<div id="verify_choices" class="right col-md-3">
+  <div id="verify_now">
+    <a id="verify_now_button"
+      class="next action-primary"
+      data-track-category="verification"
+      data-track-event="edx.bi.user.verification.deferred"
+      data-track-type="click"
+      href="{{ verify_url }}{{ key }}/">
+      {% trans "Verify now" %}
+    </a>
+  </div>
+  <a id="verify_later_button"
+    class="verify-later"
+    data-track-category="verification"
+    data-track-event="edx.bi.user.verification.immediate"
+    data-track-type="click"
+    href="{{ lms_dashboard_url }}">
+    {% trans "Go to my dashboard and verify later" %}
+  </a>
+</div>

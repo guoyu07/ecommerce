@@ -1,0 +1,38 @@
+{% load i18n %}
+
+<div class="report-receipt-provider row" id="receipt-provider">
+  <div class="provider-wrapper col-md-9">
+    <div class="provider-info">
+      {% blocktrans with provider_name=provider.display_name %}
+        You still need to visit the {{ provider_name }} website to complete the credit process.
+      {% endblocktrans %}
+    </div>
+    <div class="provider-more-info">
+      {% blocktrans with provider_name=provider.display_name platform_name=platform_name %}
+        To finalize course credit, {{ provider_name }} requires {{ platform_name }} learners to submit a credit request.
+      {% endblocktrans %}
+    </div>
+    <div class="provider-instructions">
+      {{ provider.fulfillment_instructions }}
+    </div>
+  </div>
+
+  <div class="provider-buttons-logos col-md-3">
+    <div class="provider-logo">
+      <img src='{{ provider.thumbnail_url }}' alt='{{ provider.display_name }}' />
+    </div>
+
+    <a id="credit-button"
+      class="complete-course btn-neutral"
+      data-course-key="{{ provider.course_key }}"
+      data-provider="{{ provider.id }}"
+      data-track-category="credit"
+      data-track-event="edx.bi.credit.clicked_complete_credit"
+      data-track-label="{{ provider.course_key }}"
+      data-track-type="click"
+      data-username="{{ name }}"
+      href="{{ provider.url }}">
+      {% trans  "Get Credit" %}
+    </a>
+  </div>
+</div>

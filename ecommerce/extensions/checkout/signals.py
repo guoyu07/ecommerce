@@ -12,7 +12,6 @@ from ecommerce.notifications.notifications import send_notification
 
 logger = logging.getLogger(__name__)
 post_checkout = get_class('checkout.signals', 'post_checkout')
-post_payment = get_class('checkout.signals', 'post_payment')
 
 # Number of orders currently supported for the email notifications
 ORDER_LINE_COUNT = 1

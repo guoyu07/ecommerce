@@ -9,7 +9,7 @@ from oscar.test import newfactories as factories
 
 from ecommerce.coupons.tests.mixins import CourseCatalogMockMixin
 from ecommerce.extensions.checkout.exceptions import BasketNotFreeError
-from ecommerce.extensions.checkout.utils import get_receipt_page_url, format_price
+from ecommerce.extensions.checkout.utils import get_receipt_page_url
 from ecommerce.extensions.refund.tests.mixins import RefundTestMixin
 from ecommerce.tests.testcases import TestCase
 
@@ -229,30 +229,9 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
         ))
         seat = order.lines.first().product
         context_data = {
-            'is_payment_complete': True,
             'name': '{} {}'.format(order.user.first_name, order.user.last_name),
             'page_title': 'Receipt',
             'providers': [],
-            'receipt': {
-                'billed_to': None,
-                'currency': order.currency,
-                'discount': '$0.00',
-                'discount_percentage': 0.0,
-                'email': order.user.email,
-                'is_refunded': False,
-                'items': [{
-                    'description': line.description,
-                    'cost': str(format_price(float(line.line_price_excl_tax), order.currency)),
-                    'quantity': line.quantity
-                } for line in order.lines.all()],
-                'original_cost': format_price(seat.stockrecords.first().price_excl_tax, order.currency),
-                'order_number': str(order.number),
-                'payment_processor': None,
-                'purchased_datetime': order.date_placed.strftime('%d. %B %Y'),
-                'total_amount': float(order.total_excl_tax),
-                'total_cost': str(format_price(float(order.total_excl_tax), order.currency)),
-                'vouchers': []
-            },
             'verification_data': {
                 seat.attr.course_key: True
             }
@@ -265,12 +244,7 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
         self.assertDictContainsSubset(context_data, response.context_data)
 
         response = self._visit_receipt_page_with_another_user(order, other_user)
-        context_data = {
-            'error_text': 'The receipt that you specified does not exist in this location. '
-                          'Make sure that the URL is correct and try again.',
-            'is_payment_complete': False,
-            'page_title': 'Order not found'
-        }
+        context_data = {'page_title': 'Order not found'}
         self.assertEqual(response.status_code, 404)
         self.assertDictContainsSubset(context_data, response.context_data)
 

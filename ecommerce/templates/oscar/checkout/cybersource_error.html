@@ -3,7 +3,7 @@
 {% load staticfiles %}
 
 {% block title %}
-    {% trans "Checkout Error" %}
+    {% trans "Payment Failed" %}
 {% endblock title %}
 
 {% block navbar %}
@@ -12,13 +12,13 @@
 
 {% block content %}
     <div class="container content-wrapper receipt-cancel-error">
-        <h1>{% trans "Checkout Error" %}</h1>
-        <p>{% blocktrans %} An error has occurred with your payment. <b>You have not been charged.</b>
+        <h1>{% trans "Payment Failed" %}</h1>
+        <p>{% blocktrans %} A system error occurred while processing your payment. <b>You have not been charged.</b>
         {% endblocktrans %}</p>
 
         <p>{% with "<a class='nav-link' href='mailto:"|add:payment_support_email|add:"'>"|safe as start_link %}
             {% blocktrans with end_link="</a>"|safe %}
-            Please try to submit your payment again. If this problem persists, contact {{ start_link }}
+            Please wait a few minutes and then try again. For help, contact {{ start_link }}
             {{ payment_support_email }}{{ end_link }}.
             {% endblocktrans %}
         {% endwith %}</p>

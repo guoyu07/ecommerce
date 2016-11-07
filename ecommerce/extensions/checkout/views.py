@@ -6,7 +6,8 @@ from decimal import Decimal
 import dateutil.parser
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.template.defaultfilters import date as _date
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_exempt
@@ -18,8 +19,7 @@ from ecommerce.core.url_utils import get_lms_url
 from ecommerce.extensions.api.serializers import OrderSerializer
 from ecommerce.extensions.checkout.exceptions import BasketNotFreeError
 from ecommerce.extensions.checkout.mixins import EdxOrderPlacementMixin
-from ecommerce.extensions.checkout.utils import get_credit_provider_details, get_receipt_page_url, format_price
-from ecommerce.extensions.offer.utils import get_discount_percentage
+from ecommerce.extensions.checkout.utils import get_credit_provider_details, get_receipt_page_url
 
 Applicator = get_class('offer.utils', 'Applicator')
 Basket = get_model('basket', 'Basket')
@@ -133,34 +133,33 @@ class ReceiptResponseView(ThankYouView):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        order = self.get_object()
-
-        if order and self.validate_access(order, request.user):
+        try:
+            order = self.get_object()
             self.update_context_with_order_data(context, order)
             return self.render_to_response(context)
-
-        context.update({
-            'error_text': _('The receipt that you specified does not exist in this location. '
-                            'Make sure that the URL is correct and try again.'),
-            'is_payment_complete': False,
-            'order_not_found': True,
-            'order_history_url': request.site.siteconfiguration.build_lms_url('account/settings'),
-            'page_title': _('Order not found')
-        })
-        return self.render_to_response(context=context, status=404)
+        except Http404:
+            context.update({
+                'order_history_url': request.site.siteconfiguration.build_lms_url('account/settings'),
+                'page_title': _('Order not found')
+            })
+            return self.render_to_response(context=context, status=404)
 
     def get_context_data(self, **kwargs):
         return {
-            'is_payment_complete': True,
             'name': '{} {}'.format(self.request.user.first_name, self.request.user.last_name),
             'page_title': _('Receipt')
         }
 
     def get_object(self):
-        try:
-            return Order.objects.get(number=self.request.GET['order_number'])
-        except Order.DoesNotExist:
-            return None
+        kwargs = {
+            'number': self.request.GET['order_number'],
+        }
+
+        user = self.request.user
+        if not user.is_staff:
+            kwargs['user'] = user
+
+        return get_object_or_404(Order, **kwargs)
 
     def update_context_with_order_data(self, context, order):
         """
@@ -173,12 +172,11 @@ class ReceiptResponseView(ThankYouView):
         site_configuration = self.request.site.siteconfiguration
 
         verification_data = {}
-        items = []
         providers = []
         for line in order.lines.all():
             seat = line.product
 
-            if seat.attr.certificate_type == 'credit':
+            if hasattr(seat.attr, 'certificate_type') and seat.attr.certificate_type == 'credit':
                 provider_data = get_credit_provider_details(
                     access_token=self.request.user.access_token,
                     credit_provider_id=seat.attr.credit_provider,
@@ -191,56 +189,14 @@ class ReceiptResponseView(ThankYouView):
                     })
                     providers.append(provider_data)
 
-            id_verification_required = seat.attr.id_verification_required
-            if id_verification_required:
-                verification_data[seat.attr.course_key] = id_verification_required
-
-            items.append({
-                'cost': format_price(float(line.line_price_excl_tax), order.currency),
-                'description': line.description,
-                'quantity': line.quantity
-            })
+            if hasattr(seat.attr, 'id_verification_required') and seat.attr.id_verification_required:
+                verification_data[seat.attr.course_key] = seat.attr.id_verification_required
 
         order_data = OrderSerializer(order, context={'request': self.request}).data
-        discount_value = float(order_data['discount'])
-        total_amount = float(order_data['total_excl_tax'])
-        original_cost = discount_value + total_amount
-
-        receipt = {
-            'billed_to': order.billing_address,
-            'currency': order.currency,
-            'discount': format_price(discount_value, order.currency),
-            'discount_percentage': get_discount_percentage(
-                discount_value=discount_value,
-                product_price=original_cost
-            ),
-            'email': order.user.email,
-            'is_refunded': False,
-            'items': items,
-            'order_number': order.number,
-            'original_cost': format_price(original_cost, order.currency),
-            'payment_processor': order_data['payment_processor'],
-            'purchased_datetime': _date(dateutil.parser.parse(order_data['date_placed']), "d. E Y"),
-            'total_amount': total_amount,
-            'total_cost': format_price(total_amount, order.currency),
-            'vouchers': order_data['vouchers']
-        }
 
         context.update({
+            'order_data': order_data,
             'providers': providers,
-            'receipt': receipt,
+            'purchased_datetime': dateutil.parser.parse(order_data['date_placed']),
             'verification_data': verification_data
         })
-
-    def validate_access(self, order, user):
-        """
-        Validates user access to the Receipt Page.
-
-        Args:
-            order (Order): Order for which the Receipt Page is being displayed.
-            user (User): The user making the request.
-
-        Returns:
-            bool: Indication whether the user has access to the Order's Receipt Page.
-        """
-        return user.is_staff or order.user == user

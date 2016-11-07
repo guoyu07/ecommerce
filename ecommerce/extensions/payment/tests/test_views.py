@@ -136,7 +136,7 @@ class CybersourceNotifyViewTests(CybersourceMixin, PaymentEventsMixin, TestCase)
             self.assertEqual(kwargs['order'], order)
 
         # The view should always return 200
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
 
         # Validate the payment data was recorded for auditing
         self._assert_payment_data_recorded(notification)
@@ -167,24 +167,23 @@ class CybersourceNotifyViewTests(CybersourceMixin, PaymentEventsMixin, TestCase)
                                                 basket=self.basket)
 
     @ddt.data(
-        (PaymentError, 200, 'DECLINE', 'ERROR', 'CyberSource payment failed for basket [{basket_id}]. '
-                                                'The payment response was recorded in entry [{response_id}].'),
-        (UserCancelled, 200, 'CANCEL', 'INFO', 'CyberSource payment did not complete for basket [{basket_id}] because '
-                                               '[UserCancelled]. The payment response was recorded in entry [{response_id}].'),
-        (TransactionDeclined, 200, 'DECLINE', 'INFO', 'CyberSource payment did not complete for basket [{basket_id}] because '
-                                                      '[TransactionDeclined]. The payment response was recorded in entry '
-                                                      '[{response_id}].'),
-        (KeyError, 500, 'DECLINE', 'ERROR', 'Attempts to handle payment for basket [{basket_id}] failed.')
+        (PaymentError, 200, 'ERROR', 'CyberSource payment failed for basket [{basket_id}]. '
+                                     'The payment response was recorded in entry [{response_id}].'),
+        (UserCancelled, 200, 'INFO', 'CyberSource payment did not complete for basket [{basket_id}] because '
+                                     '[UserCancelled]. The payment response was recorded in entry [{response_id}].'),
+        (TransactionDeclined, 200, 'INFO', 'CyberSource payment did not complete for basket [{basket_id}] because '
+                                           '[TransactionDeclined]. The payment response was recorded in entry '
+                                           '[{response_id}].'),
+        (KeyError, 500, 'ERROR', 'Attempts to handle payment for basket [{basket_id}] failed.')
     )
     @ddt.unpack
-    def test_payment_handling_error(self, error_class, status_code, decision, log_level, error_message):
+    def test_payment_handling_error(self, error_class, status_code, log_level, error_message):
         """
         Verify that CyberSource's merchant notification is saved to the database despite an error handling payment.
         """
         notification = self.generate_notification(
             self.basket,
             billing_address=self.billing_address,
-            decision=decision
         )
         with mock.patch.object(CybersourceNotifyView, 'handle_payment', side_effect=error_class) as fake_handle_payment:
             self._assert_processing_failure(
@@ -243,7 +242,7 @@ class CybersourceNotifyViewTests(CybersourceMixin, PaymentEventsMixin, TestCase)
 
         def check_notification_address(notification, expected_address):
             response = self.client.post(reverse('cybersource_notify'), notification)
-            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(mock_placement_handler.called)
             actual_address = mock_placement_handler.call_args[0][6]
             self.assertEqual(actual_address.summary, expected_address.summary)
