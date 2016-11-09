@@ -136,6 +136,8 @@ class ReceiptResponseView(ThankYouView):
         try:
             order = self.get_object()
             self.update_context_with_order_data(context, order)
+            if 'successful_payment' in kwargs:
+                context.update({'successful_payment': kwargs['successful_payment']})
             return self.render_to_response(context)
         except Http404:
             context.update({

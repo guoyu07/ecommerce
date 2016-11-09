@@ -11,8 +11,9 @@ define([
         'use strict';
 
         var onReady = function() {
-            var order_id = $.url('?order_number') || null;
-            if(order_id){
+            var order_id = $.url('?order_number') || null,
+                successful_payment = $('#receipt-container').data('successful-payment');
+            if(order_id && successful_payment){
                 trackPurchase(order_id);
             }
         },
