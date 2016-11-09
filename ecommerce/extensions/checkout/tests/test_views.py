@@ -226,12 +226,13 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
         response = self.client.get('{path}?order_number={order_number}'.format(
             order_number=order.number,
             path=self.path
-        ))
+        ), kwargs={'successful_payment': True})
         seat = order.lines.first().product
         context_data = {
             'name': '{} {}'.format(order.user.first_name, order.user.last_name),
             'page_title': 'Receipt',
             'providers': [],
+            'successful_payment': True,
             'verification_data': {
                 seat.attr.course_key: True
             }
