@@ -751,7 +751,6 @@ class CybersourceInterstitialViewTests(RefundTestMixin, TestCase):
 
     def test_show_cybersource_payment_error_message(self):
         """ CyberSource Payment Failures should render the error page. """
-        order = self.create_order()
         response = self.client.post(reverse('cybersource_redirect'), {'req_reference_number': 'ORDER-404'})
 
         self.assertEqual(response.status_code, 500)
