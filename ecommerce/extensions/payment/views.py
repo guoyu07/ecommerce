@@ -9,6 +9,7 @@ import six
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.management import call_command
+from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import JsonResponse, Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
@@ -280,7 +281,7 @@ class CybersourceInterstitialView(CybersourceNotifyView, TemplateView):
         # we can provide the learner more detailed information in the error message.
         cybersource_response = request.POST.dict()
         order_number = cybersource_response['req_reference_number']
-        if Order.objects.exists(number=order_number):
+        if Order.objects.filter(number=order_number).exists():
             receipt_url = get_receipt_page_url(
                 order_number=cybersource_response.get('req_reference_number'),
                 site_configuration=self.request.site.siteconfiguration
@@ -297,7 +298,8 @@ class CybersourceInterstitialView(CybersourceNotifyView, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(CybersourceInterstitialView, self).get_context_data(**kwargs)
         context.update({
-            'payment_support_email': self.request.site.siteconfiguration.payment_support_email,
+            'basket_url': self.request.site.siteconfiguration.build_ecommerce_url(reverse('basket:summary')),
+            'payment_support_email': self.request.site.siteconfiguration.payment_support_email
         })
         return context
 
