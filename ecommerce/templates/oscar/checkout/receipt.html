@@ -22,7 +22,7 @@
           class="pay-and-verify"
           data-total-amount="{{ order_data.total_excl_tax }}"
           data-currency="{{ order_data.currency }}"
-          data-payment-referer="{{ request.META.HTTP_REFERER }}">
+          data-payment-successful="{{ payment_successful }}">
           <div class="wrapper-content-main">
             <article class="content-main">
               <h3 class="thank-you">

@@ -10,7 +10,7 @@ define([
         describe('Receipt Page', function () {
             beforeEach(function () {
                 $('<script type="text/javascript">var initModelData = {};</script>').appendTo('body');
-                $('<div id="receipt-container" data-payment-referer="http://dummy-url"></div>').appendTo('body');
+                $('<div id="receipt-container" data-payment-successful="True"></div>').appendTo('body');
                 AnalyticsUtils.analyticsSetUp();
 
                 /* jshint ignore:start */

@@ -136,8 +136,6 @@ class ReceiptResponseView(ThankYouView):
         try:
             order = self.get_object()
             self.update_context_with_order_data(context, order)
-            if request.META.get('HTTP_REFERER'):
-                context.update({'successful_payment': kwargs['successful_payment']})
             return self.render_to_response(context)
         except Http404:
             context.update({
@@ -195,6 +193,10 @@ class ReceiptResponseView(ThankYouView):
                 verification_data[seat.attr.course_key] = seat.attr.id_verification_required
 
         order_data = OrderSerializer(order, context={'request': self.request}).data
+
+        payment_successful = self.request.session.pop('payment_successful', None)
+        if payment_successful:
+            context['payment_successful'] = payment_successful
 
         context.update({
             'order_data': order_data,

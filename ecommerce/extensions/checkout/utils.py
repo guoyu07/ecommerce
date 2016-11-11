@@ -42,10 +42,12 @@ def get_receipt_page_url(site_configuration, order_number=None):
         str: Receipt page URL.
     """
     if site_configuration.enable_otto_receipt_page:
-        return site_configuration.build_ecommerce_url('{base_url}{order_number}'.format(
-            base_url=settings.RECEIPT_PAGE_PATH,
-            order_number=order_number if order_number else ''
-        ))
+        if order_number:
+            return site_configuration.build_ecommerce_url('{base_url}?order_number={order_number}'.format(
+                base_url=settings.RECEIPT_PAGE_PATH,
+                order_number=order_number if order_number else ''
+            ))
+        return site_configuration.build_ecommerce_url(settings.RECEIPT_PAGE_PATH)
     return site_configuration.build_lms_url(
         '{base_url}{order_number}'.format(
             base_url='/commerce/checkout/receipt',

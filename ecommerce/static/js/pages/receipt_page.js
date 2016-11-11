@@ -12,8 +12,8 @@ define([
 
         var onReady = function() {
             var order_id = $.url('?order_number') || null,
-                data_payment_referer = $('#receipt-container').data('payment-referer');
-            if(order_id && data_payment_referer){
+                data_payment_successful = $('#receipt-container').data('payment-successful');
+            if(order_id && data_payment_successful){
                 trackPurchase(order_id);
             }
         },

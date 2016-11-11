@@ -282,11 +282,11 @@ class CybersourceInterstitialView(CybersourceNotifyView, TemplateView):
         cybersource_response = request.POST.dict()
         order_number = cybersource_response['req_reference_number']
         if Order.objects.filter(number=order_number).exists():
-            receipt_url = get_receipt_page_url(
+            receipt_page_url = get_receipt_page_url(
                 order_number=cybersource_response.get('req_reference_number'),
                 site_configuration=self.request.site.siteconfiguration
             )
-            return redirect(receipt_url)
+            return self.redirect_to_receipt_page_on_success(request, receipt_page_url)
         else:
             context = self.get_context_data()
             basket_id = OrderNumberGenerator().basket_id(order_number)
@@ -396,7 +396,7 @@ class PaypalPaymentExecutionView(EdxOrderPlacementMixin, View):
                 request=request
             )
 
-            return redirect(receipt_url)
+            return self.redirect_to_receipt_page_on_success(request, receipt_page_url)
         except:  # pylint: disable=bare-except
             logger.exception(self.order_placement_failure_msg, basket.id)
             return redirect(receipt_url)

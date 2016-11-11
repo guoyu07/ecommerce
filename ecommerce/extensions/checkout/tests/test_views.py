@@ -24,8 +24,7 @@ class FreeCheckoutViewTests(TestCase):
         super(FreeCheckoutViewTests, self).setUp()
         self.user = self.create_user()
         self.client.login(username=self.user.username, password=self.password)
-        self.site_configuration = self.site.siteconfiguration
-        self.site_configuration.enable_otto_receipt_page = True
+        self.enable_ecommerce_receipt_page()
 
     def prepare_basket(self, price):
         """ Helper function that creates a basket and adds a product with set price to it. """

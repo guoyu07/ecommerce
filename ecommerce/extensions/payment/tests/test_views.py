@@ -47,7 +47,7 @@ class CybersourceNotifyViewTests(CybersourceMixin, PaymentEventsMixin, TestCase)
     def setUp(self):
         super(CybersourceNotifyViewTests, self).setUp()
 
-        self.site.siteconfiguration.enable_otto_receipt_page = True
+        self.enable_ecommerce_receipt_page()
 
         self.user = factories.UserFactory()
         self.billing_address = self.make_billing_address()
@@ -733,9 +733,7 @@ class CybersourceInterstitialViewTests(RefundTestMixin, TestCase):
 
     def setUp(self):
         super(CybersourceInterstitialViewTests, self).setUp()
-        site_configuration = self.site.siteconfiguration
-        site_configuration.enable_otto_receipt_page = True
-        site_configuration.save()
+        self.enable_ecommerce_receipt_page()
         self.user = factories.UserFactory()
 
     def test_redirect_to_receipt_page_path(self):
