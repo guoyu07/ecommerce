@@ -175,22 +175,22 @@ class ReceiptResponseView(ThankYouView):
         providers = []
         for line in order.lines.all():
             seat = line.product
+            if self.request.user.is_verified():
+                if hasattr(seat.attr, 'certificate_type') and seat.attr.certificate_type == 'credit':
+                    provider_data = get_credit_provider_details(
+                        access_token=self.request.user.access_token,
+                        credit_provider_id=seat.attr.credit_provider,
+                        site_configuration=site_configuration
+                    )
 
-            if hasattr(seat.attr, 'certificate_type') and seat.attr.certificate_type == 'credit':
-                provider_data = get_credit_provider_details(
-                    access_token=self.request.user.access_token,
-                    credit_provider_id=seat.attr.credit_provider,
-                    site_configuration=site_configuration
-                )
-
-                if provider_data:
-                    provider_data.update({
-                        'course_key': seat.attr.course_key,
-                    })
-                    providers.append(provider_data)
-
-            if hasattr(seat.attr, 'id_verification_required') and seat.attr.id_verification_required:
-                verification_data[seat.attr.course_key] = seat.attr.id_verification_required
+                    if provider_data:
+                        provider_data.update({
+                            'course_key': seat.attr.course_key,
+                        })
+                        providers.append(provider_data)
+            else:
+                if hasattr(seat.attr, 'id_verification_required') and seat.attr.id_verification_required:
+                    verification_data[seat.attr.course_key] = seat.attr.id_verification_required
 
         order_data = OrderSerializer(order, context={'request': self.request}).data
 
