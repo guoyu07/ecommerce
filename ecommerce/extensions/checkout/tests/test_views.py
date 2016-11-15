@@ -234,14 +234,10 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, LmsApiMockMixin, RefundTe
             order_number=order.number,
             path=self.path
         ))
-        seat = order.lines.first().product
         context_data = {
             'name': '{} {}'.format(order.user.first_name, order.user.last_name),
             'page_title': 'Receipt',
-            'providers': [],
-            'verification_data': {
-                seat.attr.course_key: True
-            }
+            'providers': []
         }
         self.assertEqual(response.status_code, 200)
         self.assertDictContainsSubset(context_data, response.context_data)
