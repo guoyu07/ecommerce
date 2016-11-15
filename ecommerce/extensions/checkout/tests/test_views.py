@@ -11,6 +11,7 @@ from ecommerce.coupons.tests.mixins import CourseCatalogMockMixin
 from ecommerce.extensions.checkout.exceptions import BasketNotFreeError
 from ecommerce.extensions.checkout.utils import get_receipt_page_url
 from ecommerce.extensions.refund.tests.mixins import RefundTestMixin
+from ecommerce.tests.mixins import LmsApiMockMixin
 from ecommerce.tests.testcases import TestCase
 
 Order = get_model('order', 'Order')
@@ -24,7 +25,7 @@ class FreeCheckoutViewTests(TestCase):
         super(FreeCheckoutViewTests, self).setUp()
         self.user = self.create_user()
         self.client.login(username=self.user.username, password=self.password)
-        self.enable_ecommerce_receipt_page()
+        self.toggle_ecommerce_receipt_page(True)
 
     def prepare_basket(self, price):
         """ Helper function that creates a basket and adds a product with set price to it. """
@@ -65,10 +66,10 @@ class FreeCheckoutViewTests(TestCase):
     @httpretty.activate
     def test_redirect_to_lms_receipt(self):
         """ Verify that disabling the otto_receipt_page switch redirects to the LMS receipt page. """
-        self.site_configuration.enable_otto_receipt_page = False
+        self.toggle_ecommerce_receipt_page(False)
         self.prepare_basket(0)
         self.assertEqual(Order.objects.count(), 0)
-        receipt_page = self.site_configuration.build_lms_url('/commerce/checkout/receipt')
+        receipt_page = self.site.siteconfiguration.build_lms_url('/commerce/checkout/receipt')
 
         response = self.client.get(self.path)
         self.assertEqual(Order.objects.count(), 1)
@@ -146,7 +147,7 @@ class CheckoutErrorViewTests(TestCase):
 
 
 @ddt.ddt
-class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase):
+class ReceiptResponseViewTests(CourseCatalogMockMixin, LmsApiMockMixin, RefundTestMixin, TestCase):
     """
     Tests for the receipt view.
     """
@@ -213,6 +214,7 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
         ))
         self.assertEqual(response.status_code, 404)
 
+    @httpretty.activate
     def test_get_receipt_for_existing_order(self):
         """
         Staff user and Order owner should be able to see the Receipt Page.
@@ -222,6 +224,12 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
         other_user = self.create_user()
 
         order = self.create_order()
+        self.mock_verification_status_api(
+            self.request,
+            self.user,
+            status=200,
+            is_verified=False
+        )
         response = self.client.get('{path}?order_number={order_number}'.format(
             order_number=order.number,
             path=self.path
@@ -238,10 +246,22 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
         self.assertEqual(response.status_code, 200)
         self.assertDictContainsSubset(context_data, response.context_data)
 
+        self.mock_verification_status_api(
+            self.request,
+            staff_user,
+            status=200,
+            is_verified=False
+        )
         response = self._visit_receipt_page_with_another_user(order, staff_user)
         self.assertEqual(response.status_code, 200)
         self.assertDictContainsSubset(context_data, response.context_data)
 
+        self.mock_verification_status_api(
+            self.request,
+            other_user,
+            status=200,
+            is_verified=False
+        )
         response = self._visit_receipt_page_with_another_user(order, other_user)
         context_data = {'page_title': 'Order not found'}
         self.assertEqual(response.status_code, 404)
@@ -261,6 +281,13 @@ class ReceiptResponseViewTests(CourseCatalogMockMixin, RefundTestMixin, TestCase
             ),
             body=json.dumps(body),
             content_type="application/json"
+        )
+
+        self.mock_verification_status_api(
+            self.request,
+            self.user,
+            status=200,
+            is_verified=True
         )
 
         response = self.client.get('{path}?order_number={order_number}'.format(

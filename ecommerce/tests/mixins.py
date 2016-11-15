@@ -284,10 +284,10 @@ class SiteMixin(object):
 
         return token
 
-    def enable_ecommerce_receipt_page(self):
+    def toggle_ecommerce_receipt_page(self, enable_otto_receipt_page):
         """ Enables Ecommerce Receipt Page. """
         site_configuration = self.site.siteconfiguration
-        site_configuration.enable_otto_receipt_page = True
+        site_configuration.enable_otto_receipt_page = enable_otto_receipt_page
         site_configuration.save()
 
 

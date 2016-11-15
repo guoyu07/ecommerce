@@ -22,7 +22,7 @@ class SignalTests(CourseCatalogTestMixin, TestCase):
         super(SignalTests, self).setUp()
         self.user = self.create_user()
         self.request.user = self.user
-        self.enable_ecommerce_receipt_page()
+        self.toggle_ecommerce_receipt_page(True)
         toggle_switch('ENABLE_NOTIFICATIONS', True)
 
     def prepare_order(self, seat_type, credit_provider_id=None):

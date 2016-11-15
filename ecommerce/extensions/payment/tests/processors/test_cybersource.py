@@ -31,7 +31,7 @@ class CybersourceTests(CybersourceMixin, PaymentProcessorTestCaseMixin, TestCase
 
     def setUp(self):
         super(CybersourceTests, self).setUp()
-        self.enable_ecommerce_receipt_page()
+        self.toggle_ecommerce_receipt_page(True)
         self.basket.site = self.site
 
     @freeze_time('2016-01-01')
