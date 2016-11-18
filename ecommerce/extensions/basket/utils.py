@@ -93,7 +93,8 @@ def get_basket_switch_data(product):
 def attribute_cookie_data(basket, request):
     try:
         with transaction.atomic():
-            # Required to prevent rolling back other atomic commits if exception is found
+            # If an exception is raised below, this nested atomic block prevents the
+            # outer transaction created by ATOMIC_REQUESTS from being rolled back.
             referral = _referral_from_basket_site(basket, request.site)
 
             _record_affiliate_basket_attribution(referral, request)
