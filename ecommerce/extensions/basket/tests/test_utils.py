@@ -122,16 +122,15 @@ class BasketUtilsTests(CourseCatalogTestMixin, TestCase):
             mock_attr_method.assert_called_with(basket, self.request)
 
     def test_attribute_cookie_data_affiliate_cookie_lifecycle(self):
-        """ Verify a basket is returned and referral captured if there are cookie info """
+        """ Verify a basket is returned and referral captured if there is cookie info """
 
-        # If there are no cookie info, no referral captured
+        # If there is no cookie info, verify no referral is created.
         basket = BasketFactory(owner=self.request.user, site=self.request.site)
         attribute_cookie_data(basket, self.request)
-        # Make sure no referral is created
         with self.assertRaises(Referral.DoesNotExist):
             Referral.objects.get(basket=basket)
 
-        # If there are cookie info, the referral is captured
+        # If there is cookie info, verify a referral is captured
         affiliate_id = 'test_affiliate'
         self.request.COOKIES['affiliate_id'] = affiliate_id
         attribute_cookie_data(basket, self.request)
@@ -284,9 +283,9 @@ class BasketUtilsTests(CourseCatalogTestMixin, TestCase):
             Referral.objects.get(basket_id=basket.id)
 
 
-class BasketUtilsTranactionTests(UserMixin, TransactionTestCase):
+class BasketUtilsTransactionTests(UserMixin, TransactionTestCase):
     def setUp(self):
-        super(BasketUtilsTranactionTests, self).setUp()
+        super(BasketUtilsTransactionTests, self).setUp()
         self.request = RequestFactory()
         self.request.COOKIES = {}
         self.request.user = self.create_user()
@@ -310,10 +309,10 @@ class BasketUtilsTranactionTests(UserMixin, TransactionTestCase):
         self.request.COOKIES['test.edx.utm'] = json.dumps(utm_cookie)
         self.request.COOKIES['affiliate_id'] = affiliate_id
 
-    def test_attribution_atomic_transation(self):
+    def test_attribution_atomic_transaction(self):
         """
-            Verify db error raised from attributing cookie to basket
-            do not prevent the basket being created
+        Verify that an IntegrityError raised while creating a referral
+        does not prevent a basket from being created.
         """
         self._setup_request_cookie()
         product = ProductFactory()
@@ -325,6 +324,10 @@ class BasketUtilsTranactionTests(UserMixin, TransactionTestCase):
         with transaction.atomic():
             with mock.patch('ecommerce.extensions.basket.utils._referral_from_basket_site') as mock_get_referral:
                 # Mock to return a duplicated referral object, so when saved, a DB integrity error is raised
+                # Mocking to raise random exception will not roll back the transaction
+                # Django db would not be aware of the mocked exception,
+                # since we actually would handle the exception in the attribute_cookie_data method.
+                # This would result in the transaction being committed
                 mock_get_referral.return_value = Referral(basket=existing_basket, site=self.request.site)
                 basket = prepare_basket(self.request, product)
                 referral = Referral.objects.filter(basket=basket)
