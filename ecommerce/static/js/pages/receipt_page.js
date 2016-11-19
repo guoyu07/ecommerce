@@ -3,22 +3,21 @@
  **/
 
 define([
-        'jquery',
-        'jquery-url'
+        'jquery'
     ],
     function ($
     ) {
         'use strict';
 
-        var onReady = function() {
-            var order_id = $.url('?order_number') || null,
-                data_payment_successful = $('#receipt-container').data('payment-successful');
-            if(order_id && data_payment_successful){
+        var el = $('#receipt-container'),
+        onReady = function() {
+            var order_id = el.data('order-id'),
+                data_fire_tracking_events = el.data('fire-tracking-events');
+            if(order_id && data_fire_tracking_events){
                 trackPurchase(order_id);
             }
         },
         trackPurchase = function(order_id) {
-            var el = $('#receipt-container');
             window.analytics.track('Completed Purchase', {
                 orderId: order_id,
                 total: el.data('total-amount'),
@@ -26,9 +25,6 @@ define([
             });
         };
 
-        return {
-            onReady: onReady,
-            trackPurchase: trackPurchase
-        };
+        $(document).ready(onReady);
     }
 );

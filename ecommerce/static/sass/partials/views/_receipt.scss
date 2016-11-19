@@ -27,7 +27,8 @@
             line-height: 22px;
         }
 
-        .addressed-to {
+        .billing-address {
+            margin-top: 35px;
             margin-bottom: 35px;
         }
     }
@@ -61,6 +62,10 @@
         overflow: hidden;
     }
 
+    .payment-info {
+        margin-bottom: spacing-vertical(small);
+    }
+
     .is-ready {
         background: #e8f6fc none repeat scroll 0 0;
     }
@@ -81,9 +86,18 @@
         border-top: 4px solid rgb(255, 192, 31);
         box-shadow: 0 1px 1px 2px rgba(0, 0, 0, 0.2);
 
-        .verify-later {
-            line-height: 20px;
-            font-size: 13px;
+        .header {
+            margin: 0;
+            padding: 10px 0;
+            color: #434242;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .message {
+            color: #434242;
+            font-weight: 500;
+            line-height: 1.4em;
         }
 
         #verify_now {
@@ -94,20 +108,6 @@
             margin-bottom: 10px;
             padding-top: 10px;
             text-align: center;
-        }
-
-        .verify-message {
-            color: #434242;
-            font-weight: 500;
-            line-height: 1.4em;
-        }
-
-        .verify-message-header {
-            margin: 0;
-            padding: 10px 0;
-            color: #434242;
-            font-size: 18px;
-            font-weight: bold;
         }
 
         #verify_now_button {
@@ -121,6 +121,20 @@
                 text-decoration: none;
             }
         }
+    }
+
+    #dashboard-link {
+        margin: 20px;
+        text-align: center;
+
+        .dashboard-link {
+            font-size: 18px;
+        }
+    }
+
+    .dashboard-link {
+        line-height: 20px;
+        font-size: 13px;
     }
 
     .old-price {
@@ -156,7 +170,7 @@
         font-size: 18px;
     }
 
-    .order-line-data {
+    .order-line-data, .vouchers {
         color: rgb(29, 29, 29);
         font-size: 20px;
 
@@ -177,11 +191,6 @@
 
     p, address {
         color: #6f7074;
-    }
-
-    .partner {
-        color: #7c7c7c;
-        font-size: 16px;
     }
 
     /* Styling for the provider area; uses edX Pattern Library utils */
@@ -233,8 +242,6 @@
         }
 
         .total-value {
-            float: right;
-            width: 14%;
             color: rgb(51, 122, 183);
             font-size: 22px;
             font-weight: 700;
@@ -246,6 +253,10 @@
         margin-bottom: 10px;
         color: rgb(0, 121, 188);
         font-size: 38px;
+    }
+
+    .vouchers {
+        text-align: right;
     }
 
     .voucher-code {

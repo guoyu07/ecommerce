@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<div class="report-receipt-provider row" id="receipt-provider">
+<div class="report-receipt-provider row">
   <div class="provider-wrapper col-md-9">
     <div class="provider-info">
       {% blocktrans with provider_name=provider.display_name %}
@@ -19,20 +19,20 @@
 
   <div class="provider-buttons-logos col-md-3">
     <div class="provider-logo">
-      <img src='{{ provider.thumbnail_url }}' alt='{{ provider.display_name }}' />
+      <img src="{{ provider.thumbnail_url }}" alt="{{ provider.display_name }}" />
     </div>
 
     <a id="credit-button"
-      class="complete-course btn-neutral"
-      data-course-key="{{ provider.course_key }}"
-      data-provider="{{ provider.id }}"
-      data-track-category="credit"
-      data-track-event="edx.bi.credit.clicked_complete_credit"
-      data-track-label="{{ provider.course_key }}"
-      data-track-type="click"
-      data-username="{{ name }}"
-      href="{{ provider.url }}">
-      {% trans  "Get Credit" %}
+       class="complete-course btn-neutral"
+       data-course-key="{{ provider.course_key }}"
+       data-provider="{{ provider.id }}"
+       data-track-category="credit"
+       data-track-event="edx.bi.credit.clicked_complete_credit"
+       data-track-label="{{ provider.course_key }}"
+       data-track-type="click"
+       data-username="{{ user.username }}"
+       href="{{ provider.url }}">
+       {% trans  "Get Credit" %}
     </a>
   </div>
 </div>

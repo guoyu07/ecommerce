@@ -293,7 +293,7 @@ class CybersourceInterstitialView(CybersourceNotifyView, TemplateView):
             basket = self._get_basket(basket_id)
             if basket:
                 basket.thaw()
-            return self.render_to_response(context=context, status=500)
+            return self.render_to_response(context=context, status=502)
 
     def get_context_data(self, **kwargs):
         context = super(CybersourceInterstitialView, self).get_context_data(**kwargs)

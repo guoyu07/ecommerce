@@ -193,7 +193,7 @@ class EdxOrderPlacementMixin(OrderPlacementMixin):
         Returns:
             response(HttpRedirectResponse): Redirect Response.
         """
-        request.session['payment_successful'] = True
+        request.session['fire_tracking_events'] = True
         return redirect(receipt_page_url)
 
     def send_confirmation_message(self, order, code, site=None, **kwargs):

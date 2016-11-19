@@ -201,17 +201,12 @@ class ProductSerializer(ProductPaymentInfoMixin, serializers.HyperlinkedModelSer
 
 class LineSerializer(serializers.ModelSerializer):
     """Serializer for parsing line item data."""
-    formatted_price = serializers.SerializerMethodField()
     product = ProductSerializer()
-
-    def get_formatted_price(self, obj):
-        return format_price(float(obj.line_price_excl_tax), obj.order.currency)
 
     class Meta(object):
         model = Line
         fields = (
             'description',
-            'formatted_price',
             'line_price_excl_tax',
             'product',
             'quantity',
@@ -227,9 +222,6 @@ class OrderSerializer(serializers.ModelSerializer):
     date_placed = serializers.DateTimeField(format=ISO_8601_FORMAT)
     discount = serializers.SerializerMethodField()
     discount_percentage = serializers.SerializerMethodField()
-    formatted_discount = serializers.SerializerMethodField()
-    formatted_original_price = serializers.SerializerMethodField()
-    formatted_total_price = serializers.SerializerMethodField()
     lines = LineSerializer(many=True)
     payment_processor = serializers.SerializerMethodField()
     original_price = serializers.SerializerMethodField()
@@ -238,7 +230,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_discount(self, obj):
         try:
-            return float(obj.discounts.all()[0].amount)
+            return float(obj.discounts.first().amount)
         except IndexError:
             return 0.0
 
@@ -248,21 +240,12 @@ class OrderSerializer(serializers.ModelSerializer):
             product_price=self.get_original_price(obj)
         )
 
-    def get_formatted_discount(self, obj):
-        return format_price(self.get_discount(obj), obj.currency)
-
-    def get_formatted_original_price(self, obj):
-        return format_price(self.get_original_price(obj), obj.currency)
-
-    def get_formatted_total_price(self, obj):
-        return format_price(float(obj.total_excl_tax), obj.currency)
-
     def get_original_price(self, obj):
         return float(obj.total_excl_tax) + self.get_discount(obj)
 
     def get_payment_processor(self, obj):
         try:
-            return obj.sources.all()[0].source_type.name
+            return obj.sources.first().source_type.name
         except IndexError:
             return None
 
@@ -283,9 +266,6 @@ class OrderSerializer(serializers.ModelSerializer):
             'date_placed',
             'discount',
             'discount_percentage',
-            'formatted_discount',
-            'formatted_original_price',
-            'formatted_total_price',
             'lines',
             'number',
             'original_price',

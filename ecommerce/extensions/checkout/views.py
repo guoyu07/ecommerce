@@ -3,23 +3,19 @@ from __future__ import unicode_literals
 
 from decimal import Decimal
 
-import dateutil.parser
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import RedirectView, TemplateView
 from oscar.apps.checkout.views import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from oscar.core.loading import get_class, get_model
 
 from ecommerce.core.url_utils import get_lms_url
-from ecommerce.extensions.api.serializers import OrderSerializer
 from ecommerce.extensions.checkout.exceptions import BasketNotFreeError
 from ecommerce.extensions.checkout.mixins import EdxOrderPlacementMixin
-from ecommerce.extensions.checkout.utils import get_credit_provider_details, get_receipt_page_url
+from ecommerce.extensions.checkout.utils import get_receipt_page_url
 
 Applicator = get_class('offer.utils', 'Applicator')
 Basket = get_model('basket', 'Basket')
@@ -120,39 +116,40 @@ class CheckoutErrorView(TemplateView):
 
 class ReceiptResponseView(ThankYouView):
     """ Handles behavior needed to display an order receipt. """
-    template_name = 'checkout/receipt.html'
+    template_name = 'edx/checkout/receipt.html'
 
-    @method_decorator(csrf_exempt)
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         """
-        Customers should only be able to view their receipts when logged in. To avoid blocking responses
-        from payment processors which POST back to the page, the view must be CSRF-exempt.
+        Customers should only be able to view their receipts when logged in.
         """
         return super(ReceiptResponseView, self).dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
         try:
-            order = self.get_object()
-            self.update_context_with_order_data(context, order)
-            return self.render_to_response(context)
+            return super(ReceiptResponseView, self).get(request, *args, **kwargs)
         except Http404:
-            context.update({
+            self.template_name = 'edx/checkout/receipt_not_found.html'
+            context = {
                 'order_history_url': request.site.siteconfiguration.build_lms_url('account/settings'),
-                'page_title': _('Order not found')
-            })
+            }
             return self.render_to_response(context=context, status=404)
 
     def get_context_data(self, **kwargs):
-        return {
-            'name': '{} {}'.format(self.request.user.first_name, self.request.user.last_name),
-            'page_title': _('Receipt')
-        }
+        context = super(ReceiptResponseView, self).get_context_data(**kwargs)
+        order = context[self.context_object_name]
+        context.update({
+            'payment_method': self.get_payment_method(order),
+            'fire_tracking_events': self.request.session.pop('fire_tracking_events', False),
+            'display_credit_messaging': self.order_contains_credit_seat(order),
+        })
+        context.update(self.get_order_verification_context(order))
+        return context
 
     def get_object(self):
         kwargs = {
             'number': self.request.GET['order_number'],
+            'site': self.request.site,
         }
 
         user = self.request.user
@@ -161,47 +158,39 @@ class ReceiptResponseView(ThankYouView):
 
         return get_object_or_404(Order, **kwargs)
 
-    def update_context_with_order_data(self, context, order):
-        """
-        Updates the context dictionary with Order data.
+    def get_payment_method(self, order):
+        source = order.sources.first()
+        if source:
+            if source.card_type:
+                return '{type} {number}'.format(
+                    type=source.get_card_type_display(),
+                    number=source.label
+                )
+            return source.source_type.name
+        return None
 
-        Args:
-            context (dict): Context dictionary returned with the Response.
-            order (Order): Order for which the Receipt Page is being rendered.
-        """
-        site_configuration = self.request.site.siteconfiguration
+    def order_contains_credit_seat(self, order):
+        for line in order.lines.all():
+            if getattr(line.product.attr, 'credit_provider', None):
+                return True
+        return False
 
-        verification_data = {}
-        providers = []
+    def get_order_verification_context(self, order):
+        context = {}
+        verified_course_id = None
+
+        # NOTE: Only display verification and credit completion details to the user who actually placed the order.
         if self.request.user == order.user:
             for line in order.lines.all():
-                seat = line.product
-                if self.request.user.is_verified(self.request):
-                    if hasattr(seat.attr, 'certificate_type') and seat.attr.certificate_type == 'credit':
-                        provider_data = get_credit_provider_details(
-                            access_token=self.request.user.access_token,
-                            credit_provider_id=seat.attr.credit_provider,
-                            site_configuration=site_configuration
-                        )
+                product = line.product
 
-                        if provider_data:
-                            provider_data.update({
-                                'course_key': seat.attr.course_key,
-                            })
-                            providers.append(provider_data)
-                else:
-                    if hasattr(seat.attr, 'id_verification_required') and seat.attr.id_verification_required:
-                        verification_data[seat.attr.course_key] = seat.attr.id_verification_required
+                if not verified_course_id and getattr(product.attr, 'id_verification_required', False):
+                    verified_course_id = product.attr.course_key
 
-        order_data = OrderSerializer(order, context={'request': self.request}).data
+            if verified_course_id:
+                context.update({
+                    'verified_course_id': verified_course_id,
+                    'user_verified': self.request.user.is_verified(self.request),
+                })
 
-        payment_successful = self.request.session.pop('payment_successful', None)
-        if payment_successful:
-            context['payment_successful'] = payment_successful
-
-        context.update({
-            'order_data': order_data,
-            'providers': providers,
-            'purchased_datetime': dateutil.parser.parse(order_data['date_placed']),
-            'verification_data': verification_data
-        })
+        return context

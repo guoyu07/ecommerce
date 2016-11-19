@@ -14,6 +14,7 @@ class LineInlineExtended(LineInline):
 
 @admin.register(Order)
 class OrderAdminExtended(OrderAdmin):
+    raw_id_fields = ['user', 'billing_address', 'shipping_address', ]
     inlines = [LineInlineExtended]
     readonly_fields = ('basket',) + OrderAdmin.readonly_fields
     show_full_result_count = False
@@ -42,3 +43,5 @@ class PaymentEventAdminExtended(PaymentEventAdmin):
 @admin.register(OrderDiscount)
 class OrderDiscountAdminExtended(OrderDiscountAdmin):
     show_full_result_count = False
+
+admin.site.register(BillingAddress)
